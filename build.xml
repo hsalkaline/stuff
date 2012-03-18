@@ -1,0 +1,36 @@
+<project name="testprj" default="build">
+  <target name="build" depends="test"/>
+
+  <target name="test">
+    <phpunit haltonfailure="true" printsummary="true">
+      <batchtest>
+        <fileset dir=".">
+          <include name="*Test.php"/>
+        </fileset>
+      </batchtest>
+    </phpunit>
+  </target>
+
+  <target name="ctest">
+    <adhoc-task name="watch"><![CDATA[
+      $fd = inotify_init();
+
+      $wd = inotify_add_watch($fd, '.', IN_MODIFY);
+
+      while($events = inotify_read($fd)){
+        $aInterestedEvents = array_filter(
+          $events,
+          function($item){ 
+             return preg_match("/\.php$/", $item['name']);
+          });
+        if(!empty($aInterestedEvents)){
+          inotify_rm_watch($fd, $wd);
+          passthru("phing test");
+          $wd = inotify_add_watch($fd, '.', IN_MODIFY);
+        }
+      }
+
+    ]]>
+    </adhoc-task>
+  </target>
+</project>
